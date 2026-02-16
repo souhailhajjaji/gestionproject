@@ -1,0 +1,149 @@
+stages:
+  - build
+  - test
+  - quality
+  - package
+  - deploy
+
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=.m2"
+  DOCKER_TLS_CERTDIR: "/certs"
+  BACKEND_IMAGE: $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA
+  FRONTEND_IMAGE: $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_SHA
+
+cache:
+  paths:
+    - .m2/
+    - node_modules/
+
+# Backend Build
+build-backend:
+  stage: build
+  image: maven:3.9.9-eclipse-temurin-25
+  working_directory: backend
+  script:
+    - mvn clean compile -B
+  rules:
+    - changes:
+        - backend/**/*
+
+# Frontend Build
+build-frontend:
+  stage: build
+  image: node:22-alpine
+  working_directory: frontend
+  script:
+    - npm ci
+    - npm run build -- --configuration production
+  rules:
+    - changes:
+        - frontend/**/*
+
+# Backend Tests
+test-backend:
+  stage: test
+  image: maven:3.9.9-eclipse-temurin-25
+  working_directory: backend
+  script:
+    - mvn test -B
+  artifacts:
+    reports:
+      junit: backend/target/surefire-reports/*.xml
+    paths:
+      - backend/target/site/jacoco/
+  rules:
+    - changes:
+        - backend/**/*
+
+# Frontend Tests
+test-frontend:
+  stage: test
+  image: node:22-alpine
+  working_directory: frontend
+  script:
+    - npm ci
+    - npm run test -- --browsers=ChromeHeadless --watch=false --code-coverage
+  artifacts:
+    reports:
+      junit: frontend/reports/junit.xml
+    paths:
+      - frontend/coverage/
+  rules:
+    - changes:
+        - frontend/**/*
+
+# SonarQube Analysis
+sonarqube:
+  stage: quality
+  image: maven:3.9.9-eclipse-temurin-25
+  working_directory: backend
+  variables:
+    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
+  script:
+    - mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+      -Dsonar.projectKey=$CI_PROJECT_PATH_SLUG
+      -Dsonar.host.url=$SONAR_HOST_URL
+      -Dsonar.login=$SONAR_TOKEN
+  rules:
+    - changes:
+        - backend/**/*
+
+# Package Backend
+package-backend:
+  stage: package
+  image: maven:3.9.9-eclipse-temurin-25
+  working_directory: backend
+  script:
+    - mvn package -DskipTests -B
+    - docker build -t $BACKEND_IMAGE .
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker push $BACKEND_IMAGE
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      changes:
+        - backend/**/*
+  needs:
+    - test-backend
+
+# Package Frontend
+package-frontend:
+  stage: package
+  image: docker:27
+  services:
+    - docker:27-dind
+  working_directory: frontend
+  script:
+    - docker build -t $FRONTEND_IMAGE .
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker push $FRONTEND_IMAGE
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      changes:
+        - frontend/**/*
+  needs:
+    - test-frontend
+
+# Deploy to Kubernetes
+deploy:
+  stage: deploy
+  image: bitnami/kubectl:latest
+  script:
+    - kubectl config use-context $K8S_CONTEXT
+    - kubectl apply -f infrastructure/kubernetes/namespace.yaml
+    - kubectl apply -f infrastructure/kubernetes/configmap.yaml
+    - kubectl apply -f infrastructure/kubernetes/secrets.yaml
+    - kubectl apply -f infrastructure/kubernetes/postgres.yaml
+    - kubectl apply -f infrastructure/kubernetes/keycloak.yaml
+    - kubectl apply -f infrastructure/kubernetes/rustfs.yaml
+    - kubectl set image deployment/backend backend=$BACKEND_IMAGE
+    - kubectl set image deployment/frontend frontend=$FRONTEND_IMAGE
+    - kubectl rollout status deployment/backend
+    - kubectl rollout status deployment/frontend
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  needs:
+    - package-backend
+    - package-frontend
+  environment:
+    name: production
+    url: https://gestionprojet.example.com

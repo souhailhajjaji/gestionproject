@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gestion-projet-config
+  namespace: gestion-projet
+data:
+  SPRING_PROFILES_ACTIVE: "prod"
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/gestionprojet"
+  SPRING_DATASOURCE_USERNAME: "admin"
+  KEYCLOAK_AUTH_SERVER_URL: "http://keycloak:8080"
+  KEYCLOAK_REALM: "gestion-projet"
+  KEYCLOAK_RESOURCE: "backend-api"
+  RUSTFS_BASE_URL: "http://rustfs:8081"
+  KEYCLOAK_URL: "http://keycloak:8080"
+  BACKEND_URL: "http://backend:8080"

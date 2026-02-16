@@ -1,0 +1,99 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-realm-config
+  namespace: gestion-projet
+data:
+  gestion-projet-realm.json: |
+    {
+      "id": "gestion-projet",
+      "realm": "gestion-projet",
+      "displayName": "Gestion Projet",
+      "enabled": true,
+      "sslRequired": "external",
+      "registrationAllowed": false,
+      "roles": {
+        "realm": [
+          {
+            "name": "ADMIN",
+            "description": "Administrator role",
+            "composite": false,
+            "clientRole": false
+          },
+          {
+            "name": "USER",
+            "description": "Standard user role",
+            "composite": false,
+            "clientRole": false
+          }
+        ]
+      },
+      "clients": [
+        {
+          "clientId": "backend-api",
+          "name": "Backend API",
+          "enabled": true,
+          "clientAuthenticatorType": "client-secret",
+          "secret": "backend-secret",
+          "bearerOnly": false,
+          "consentRequired": false,
+          "standardFlowEnabled": false,
+          "implicitFlowEnabled": false,
+          "directAccessGrantsEnabled": true,
+          "serviceAccountsEnabled": true,
+          "publicClient": false,
+          "protocol": "openid-connect",
+          "fullScopeAllowed": true
+        },
+        {
+          "clientId": "frontend-app",
+          "name": "Frontend Application",
+          "enabled": true,
+          "publicClient": true,
+          "bearerOnly": false,
+          "consentRequired": false,
+          "standardFlowEnabled": true,
+          "implicitFlowEnabled": false,
+          "directAccessGrantsEnabled": true,
+          "serviceAccountsEnabled": false,
+          "protocol": "openid-connect",
+          "fullScopeAllowed": true,
+          "redirectUris": ["http://localhost:4200/*", "http://gestionprojet.local/*"],
+          "webOrigins": ["http://localhost:4200", "http://gestionprojet.local"]
+        }
+      ],
+      "users": [
+        {
+          "username": "admin",
+          "email": "admin@gestionprojet.com",
+          "emailVerified": true,
+          "enabled": true,
+          "firstName": "Admin",
+          "lastName": "User",
+          "credentials": [
+            {
+              "type": "password",
+              "value": "admin123",
+              "temporary": false
+            }
+          ],
+          "realmRoles": ["ADMIN", "USER"]
+        },
+        {
+          "username": "user1",
+          "email": "user1@gestionprojet.com",
+          "emailVerified": true,
+          "enabled": true,
+          "firstName": "John",
+          "lastName": "Doe",
+          "credentials": [
+            {
+              "type": "password",
+              "value": "user123",
+              "temporary": false
+            }
+          ],
+          "realmRoles": ["USER"]
+        }
+      ]
+    }
