@@ -6,8 +6,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci
+# Install dependencies (using --legacy-peer-deps for keycloak-angular compatibility)
+RUN npm ci --legacy-peer-deps
 
 # Copy source code
 COPY . .

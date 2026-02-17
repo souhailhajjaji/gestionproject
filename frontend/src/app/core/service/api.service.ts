@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 import { User } from '../../shared/models/user';
 import { Project } from '../../shared/models/project';
@@ -17,6 +18,17 @@ export class ApiService {
   private http = inject(HttpClient);
   private apiUrl = '/api';
 
+  /**
+   * Handles HTTP errors and returns a formatted error observable.
+   * @param error - The HTTP error response
+   * @returns Observable throwing the formatted error
+   */
+  private handleError(error: any): Observable<never> {
+    const errorMessage = error.error?.message || error.message || 'Une erreur inconnue est survenue';
+    console.error('API Error:', error);
+    return throwError(() => new Error(errorMessage));
+  }
+
   // ==================== User endpoints ====================
 
   /**
@@ -24,7 +36,7 @@ export class ApiService {
    * @returns Observable of an array of users
    */
   getUsers(): Observable<User[]> {
-    return this.http.get<User[]>(`${this.apiUrl}/users`);
+    return this.http.get<User[]>(`${this.apiUrl}/users`).pipe(catchError(this.handleError));
   }
 
   /**
@@ -33,7 +45,7 @@ export class ApiService {
    * @returns Observable of the user
    */
   getUser(id: string): Observable<User> {
-    return this.http.get<User>(`${this.apiUrl}/users/${id}`);
+    return this.http.get<User>(`${this.apiUrl}/users/${id}`).pipe(catchError(this.handleError));
   }
 
   /**
@@ -44,7 +56,7 @@ export class ApiService {
    */
   createUser(user: Partial<User>, password: string): Observable<User> {
     const params = new HttpParams().set('password', password);
-    return this.http.post<User>(`${this.apiUrl}/users`, user, { params });
+    return this.http.post<User>(`${this.apiUrl}/users`, user, { params }).pipe(catchError(this.handleError));
   }
 
   /**
@@ -54,7 +66,7 @@ export class ApiService {
    * @returns Observable of the updated user
    */
   updateUser(id: string, user: Partial<User>): Observable<User> {
-    return this.http.put<User>(`${this.apiUrl}/users/${id}`, user);
+    return this.http.put<User>(`${this.apiUrl}/users/${id}`, user).pipe(catchError(this.handleError));
   }
 
   /**
@@ -63,7 +75,7 @@ export class ApiService {
    * @returns Observable of the delete response
    */
   deleteUser(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/users/${id}`);
+    return this.http.delete<void>(`${this.apiUrl}/users/${id}`).pipe(catchError(this.handleError));
   }
 
   /**
@@ -75,7 +87,7 @@ export class ApiService {
   uploadIdentityDocument(id: string, file: File): Observable<User> {
     const formData = new FormData();
     formData.append('file', file);
-    return this.http.post<User>(`${this.apiUrl}/users/${id}/document`, formData);
+    return this.http.post<User>(`${this.apiUrl}/users/${id}/document`, formData).pipe(catchError(this.handleError));
   }
 
   /**
@@ -85,7 +97,7 @@ export class ApiService {
    * @returns Observable of the updated user
    */
   assignRole(id: string, role: string): Observable<User> {
-    return this.http.put<User>(`${this.apiUrl}/users/${id}/roles/${role}`, {});
+    return this.http.put<User>(`${this.apiUrl}/users/${id}/roles/${role}`, {}).pipe(catchError(this.handleError));
   }
 
   /**
@@ -95,7 +107,7 @@ export class ApiService {
    * @returns Observable of the updated user
    */
   removeRole(id: string, role: string): Observable<User> {
-    return this.http.delete<User>(`${this.apiUrl}/users/${id}/roles/${role}`);
+    return this.http.delete<User>(`${this.apiUrl}/users/${id}/roles/${role}`).pipe(catchError(this.handleError));
   }
 
   // ==================== Project endpoints ====================
@@ -105,7 +117,7 @@ export class ApiService {
    * @returns Observable of an array of projects
    */
   getProjects(): Observable<Project[]> {
-    return this.http.get<Project[]>(`${this.apiUrl}/projects`);
+    return this.http.get<Project[]>(`${this.apiUrl}/projects`).pipe(catchError(this.handleError));
   }
 
   /**
@@ -114,7 +126,7 @@ export class ApiService {
    * @returns Observable of the project
    */
   getProject(id: string): Observable<Project> {
-    return this.http.get<Project>(`${this.apiUrl}/projects/${id}`);
+    return this.http.get<Project>(`${this.apiUrl}/projects/${id}`).pipe(catchError(this.handleError));
   }
 
   /**
@@ -123,7 +135,7 @@ export class ApiService {
    * @returns Observable of an array of projects
    */
   getProjectsByResponsable(responsableId: string): Observable<Project[]> {
-    return this.http.get<Project[]>(`${this.apiUrl}/projects/responsable/${responsableId}`);
+    return this.http.get<Project[]>(`${this.apiUrl}/projects/responsable/${responsableId}`).pipe(catchError(this.handleError));
   }
 
   /**
@@ -132,7 +144,7 @@ export class ApiService {
    * @returns Observable of the created project
    */
   createProject(project: Partial<Project>): Observable<Project> {
-    return this.http.post<Project>(`${this.apiUrl}/projects`, project);
+    return this.http.post<Project>(`${this.apiUrl}/projects`, project).pipe(catchError(this.handleError));
   }
 
   /**
@@ -142,7 +154,7 @@ export class ApiService {
    * @returns Observable of the updated project
    */
   updateProject(id: string, project: Partial<Project>): Observable<Project> {
-    return this.http.put<Project>(`${this.apiUrl}/projects/${id}`, project);
+    return this.http.put<Project>(`${this.apiUrl}/projects/${id}`, project).pipe(catchError(this.handleError));
   }
 
   /**
@@ -151,7 +163,7 @@ export class ApiService {
    * @returns Observable of the delete response
    */
   deleteProject(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/projects/${id}`);
+    return this.http.delete<void>(`${this.apiUrl}/projects/${id}`).pipe(catchError(this.handleError));
   }
 
   // ==================== Task endpoints ====================
@@ -161,7 +173,7 @@ export class ApiService {
    * @returns Observable of an array of tasks
    */
   getTasks(): Observable<Task[]> {
-    return this.http.get<Task[]>(`${this.apiUrl}/tasks`);
+    return this.http.get<Task[]>(`${this.apiUrl}/tasks`).pipe(catchError(this.handleError));
   }
 
   /**
@@ -170,7 +182,7 @@ export class ApiService {
    * @returns Observable of the task
    */
   getTask(id: string): Observable<Task> {
-    return this.http.get<Task>(`${this.apiUrl}/tasks/${id}`);
+    return this.http.get<Task>(`${this.apiUrl}/tasks/${id}`).pipe(catchError(this.handleError));
   }
 
   /**
@@ -179,7 +191,7 @@ export class ApiService {
    * @returns Observable of an array of tasks
    */
   getTasksByProjet(projetId: string): Observable<Task[]> {
-    return this.http.get<Task[]>(`${this.apiUrl}/tasks/projet/${projetId}`);
+    return this.http.get<Task[]>(`${this.apiUrl}/tasks/projet/${projetId}`).pipe(catchError(this.handleError));
   }
 
   /**
@@ -188,7 +200,7 @@ export class ApiService {
    * @returns Observable of an array of tasks
    */
   getTasksByAssigne(assgneId: string): Observable<Task[]> {
-    return this.http.get<Task[]>(`${this.apiUrl}/tasks/assigne/${assgneId}`);
+    return this.http.get<Task[]>(`${this.apiUrl}/tasks/assigne/${assgneId}`).pipe(catchError(this.handleError));
   }
 
   /**
@@ -207,7 +219,7 @@ export class ApiService {
     if (params.projetId) {
       httpParams = httpParams.set('projetId', params.projetId);
     }
-    return this.http.get<Task[]>(`${this.apiUrl}/tasks/filter`, { params: httpParams });
+    return this.http.get<Task[]>(`${this.apiUrl}/tasks/filter`, { params: httpParams }).pipe(catchError(this.handleError));
   }
 
   /**
@@ -216,7 +228,7 @@ export class ApiService {
    * @returns Observable of a map containing status counts
    */
   getTaskStatsByProjet(projetId: string): Observable<{ [key: string]: number }> {
-    return this.http.get<{ [key: string]: number }>(`${this.apiUrl}/tasks/projet/${projetId}/stats`);
+    return this.http.get<{ [key: string]: number }>(`${this.apiUrl}/tasks/projet/${projetId}/stats`).pipe(catchError(this.handleError));
   }
 
   /**
@@ -225,7 +237,7 @@ export class ApiService {
    * @returns Observable of the created task
    */
   createTask(task: Partial<Task>): Observable<Task> {
-    return this.http.post<Task>(`${this.apiUrl}/tasks`, task);
+    return this.http.post<Task>(`${this.apiUrl}/tasks`, task).pipe(catchError(this.handleError));
   }
 
   /**
@@ -235,7 +247,7 @@ export class ApiService {
    * @returns Observable of the updated task
    */
   updateTask(id: string, task: Partial<Task>): Observable<Task> {
-    return this.http.put<Task>(`${this.apiUrl}/tasks/${id}`, task);
+    return this.http.put<Task>(`${this.apiUrl}/tasks/${id}`, task).pipe(catchError(this.handleError));
   }
 
   /**
@@ -246,7 +258,7 @@ export class ApiService {
    */
   updateTaskStatus(id: string, statut: string): Observable<Task> {
     const params = new HttpParams().set('statut', statut);
-    return this.http.patch<Task>(`${this.apiUrl}/tasks/${id}/status`, {}, { params });
+    return this.http.patch<Task>(`${this.apiUrl}/tasks/${id}/status`, {}, { params }).pipe(catchError(this.handleError));
   }
 
   /**
@@ -255,6 +267,6 @@ export class ApiService {
    * @returns Observable of the delete response
    */
   deleteTask(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/tasks/${id}`);
+    return this.http.delete<void>(`${this.apiUrl}/tasks/${id}`).pipe(catchError(this.handleError));
   }
 }

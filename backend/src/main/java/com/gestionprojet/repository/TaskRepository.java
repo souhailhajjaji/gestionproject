@@ -54,7 +54,7 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
      * @param id the task UUID
      * @return Optional containing the task with details if found
      */
-    @Query("SELECT t FROM t JOIN FETCH t.projet p JOIN FETCH p.responsable WHERE t.id = :id")
+    @Query("SELECT t FROM Task t JOIN FETCH t.projet p JOIN FETCH p.responsable WHERE t.id = :id")
     Optional<Task> findByIdWithDetails(@Param("id") UUID id);
 
     /**

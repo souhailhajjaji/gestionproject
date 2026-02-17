@@ -23,6 +23,12 @@ import { User } from '../../../shared/models/user';
         </button>
       </div>
 
+      <!-- Error Alert -->
+      <div class="alert alert-danger alert-dismissible fade show" *ngIf="userError" role="alert">
+        {{ userError }}
+        <button type="button" class="btn-close" (click)="userError = ''"></button>
+      </div>
+
       <!-- Create User Modal -->
       <div class="modal" [class.show]="showCreateForm" style="display: block;" *ngIf="showCreateForm">
         <div class="modal-dialog">
@@ -109,6 +115,8 @@ export class UserListComponent implements OnInit {
   newUser: Partial<User> = { roles: ['USER'] };
   password = '';
 
+  userError = '';
+
   /**
    * Initializes the component and loads users.
    */
@@ -123,6 +131,11 @@ export class UserListComponent implements OnInit {
     this.apiService.getUsers().subscribe({
       next: (users) => {
         this.users = users;
+        this.userError = '';
+      },
+      error: (err) => {
+        this.userError = 'Erreur lors du chargement des utilisateurs: ' + err.message;
+        console.error('Error loading users:', err);
       }
     });
   }
@@ -137,7 +150,12 @@ export class UserListComponent implements OnInit {
         this.showCreateForm = false;
         this.newUser = { roles: ['USER'] };
         this.password = '';
+        this.userError = '';
         this.loadUsers();
+      },
+      error: (err) => {
+        this.userError = 'Erreur lors de la création: ' + err.message;
+        console.error('Error creating user:', err);
       }
     });
   }
@@ -151,6 +169,10 @@ export class UserListComponent implements OnInit {
       this.apiService.deleteUser(id).subscribe({
         next: () => {
           this.loadUsers();
+        },
+        error: (err) => {
+          this.userError = 'Erreur lors de la suppression: ' + err.message;
+          console.error('Error deleting user:', err);
         }
       });
     }

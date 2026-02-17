@@ -23,6 +23,18 @@ import { User } from '../../../shared/models/user';
         </button>
       </div>
 
+      <!-- Error Alert -->
+      <div class="alert alert-danger alert-dismissible fade show" *ngIf="projectError" role="alert">
+        {{ projectError }}
+        <button type="button" class="btn-close" (click)="projectError = ''"></button>
+      </div>
+
+      <!-- No Users Alert -->
+      <div class="alert alert-warning" *ngIf="users.length === 0">
+        <strong>Aucun utilisateur trouvé!</strong> Vous devez d'abord créer un utilisateur pour pouvoir créer un projet.
+        <a routerLink="/users" class="alert-link">Gérer les utilisateurs</a>
+      </div>
+
       <!-- Create Project Modal -->
       <div class="modal" [class.show]="showCreateForm" style="display: block;" *ngIf="showCreateForm">
         <div class="modal-dialog">
@@ -50,15 +62,16 @@ import { User } from '../../../shared/models/user';
                   <input type="date" class="form-control" [(ngModel)]="newProject.dateFin" name="dateFin">
                 </div>
                 <div class="mb-3">
-                  <label class="form-label">Responsable</label>
+                  <label class="form-label">Responsable <span class="text-danger">*</span></label>
                   <select class="form-select" [(ngModel)]="newProject.responsableId" name="responsableId" required>
-                    <option [ngValue]="undefined">Sélectionner un responsable</option>
+                    <option [ngValue]="undefined" disabled>Sélectionner un responsable</option>
                     <option *ngFor="let user of users" [ngValue]="user.id">
-                      {{ user.nom }} {{ user.prenom }}
+                      {{ user.nom }} {{ user.prenom }} ({{ user.email }})
                     </option>
                   </select>
+                  <div class="form-text">Un responsable est requis pour créer un projet.</div>
                 </div>
-                <button type="submit" class="btn btn-primary">Créer</button>
+                <button type="submit" class="btn btn-primary" [disabled]="!newProject.responsableId">Créer</button>
               </form>
             </div>
           </div>
@@ -104,6 +117,7 @@ export class ProjectListComponent implements OnInit {
   users: User[] = [];
   showCreateForm = false;
   newProject: Partial<Project> = {};
+  projectError = '';
 
   /**
    * Initializes the component and loads projects and users.
@@ -120,6 +134,11 @@ export class ProjectListComponent implements OnInit {
     this.apiService.getProjects().subscribe({
       next: (projects) => {
         this.projects = projects;
+        this.projectError = '';
+      },
+      error: (err) => {
+        this.projectError = 'Erreur lors du chargement des projets: ' + err.message;
+        console.error('Error loading projects:', err);
       }
     });
   }
@@ -131,6 +150,9 @@ export class ProjectListComponent implements OnInit {
     this.apiService.getUsers().subscribe({
       next: (users) => {
         this.users = users;
+      },
+      error: (err) => {
+        console.error('Error loading users:', err);
       }
     });
   }
@@ -144,7 +166,12 @@ export class ProjectListComponent implements OnInit {
       next: () => {
         this.showCreateForm = false;
         this.newProject = {};
+        this.projectError = '';
         this.loadProjects();
+      },
+      error: (err) => {
+        this.projectError = 'Erreur lors de la création: ' + err.message;
+        console.error('Error creating project:', err);
       }
     });
   }
@@ -158,6 +185,10 @@ export class ProjectListComponent implements OnInit {
       this.apiService.deleteProject(id).subscribe({
         next: () => {
           this.loadProjects();
+        },
+        error: (err) => {
+          this.projectError = 'Erreur lors de la suppression: ' + err.message;
+          console.error('Error deleting project:', err);
         }
       });
     }

@@ -7,41 +7,40 @@ import org.mapstruct.*;
 import java.util.UUID;
 
 /**
- * MapStruct mapper for converting between Project entity and ProjectDTO.
+ * MapStruct mapper for converting between Project entity and DTOs.
  * Handles bidirectional conversion and partial updates.
  */
 @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = "spring", uses = {UserMapper.class})
 public interface ProjectMapper {
 
     /**
-     * Converts a ProjectDTO to a Project entity.
+     * Converts a ProjectRequestDTO to a Project entity.
      *
-     * @param projectDTO the project DTO to convert
+     * @param projectDTO the project request DTO to convert
      * @return the project entity
      */
-    Project toEntity(ProjectDTO projectDTO);
+    Project toEntity(ProjectRequestDTO projectDTO);
 
     /**
-     * Converts a Project entity to a ProjectDTO.
+     * Converts a Project entity to a ProjectResponseDTO.
      *
      * @param project the project entity to convert
-     * @return the project DTO
+     * @return the project response DTO
      */
-    ProjectDTO toDto(Project project);
+    ProjectResponseDTO toResponseDto(Project project);
 
     /**
-     * Performs a partial update of a project entity from a DTO.
+     * Performs a partial update of a project entity from a RequestDTO.
      * Ignores ID, timestamps, and relationships.
      *
      * @param project the project entity to update
      * @param projectDTO the DTO containing update values
-     * @return the updated project entity
      */
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "responsable", ignore = true)
-    Project partialUpdate(@MappingTarget Project project, ProjectDTO projectDTO);
+    void partialUpdate(@MappingTarget Project project, ProjectRequestDTO projectDTO);
 
     /**
      * Creates a Project entity from a UUID ID.

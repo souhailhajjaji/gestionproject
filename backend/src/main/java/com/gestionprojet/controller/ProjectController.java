@@ -1,6 +1,7 @@
 package com.gestionprojet.controller;
 
-import com.gestionprojet.dto.ProjectDTO;
+import com.gestionprojet.dto.ProjectRequestDTO;
+import com.gestionprojet.dto.ProjectResponseDTO;
 import com.gestionprojet.service.ProjectService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -9,7 +10,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -36,7 +36,7 @@ public class ProjectController {
      */
     @GetMapping
     @Operation(summary = "Get all projects")
-    public ResponseEntity<List<ProjectDTO>> getAllProjects() {
+    public ResponseEntity<List<ProjectResponseDTO>> getAllProjects() {
         return ResponseEntity.ok(projectService.findAll());
     }
 
@@ -45,11 +45,11 @@ public class ProjectController {
      *
      * @param id the UUID of the project to retrieve
      * @return the project if found
-     * @throws com.gestionprojet.exception.ResourceNotFoundException if project not found
+     * @throws com.gestionprojet.exception.ProjectNotFoundException if project not found
      */
     @GetMapping("/{id}")
     @Operation(summary = "Get project by ID")
-    public ResponseEntity<ProjectDTO> getProjectById(@PathVariable UUID id) {
+    public ResponseEntity<ProjectResponseDTO> getProjectById(@PathVariable UUID id) {
         return ResponseEntity.ok(projectService.findById(id));
     }
 
@@ -61,7 +61,8 @@ public class ProjectController {
      */
     @GetMapping("/responsable/{responsableId}")
     @Operation(summary = "Get projects by responsible user")
-    public ResponseEntity<List<ProjectDTO>> getProjectsByResponsable(@PathVariable UUID responsableId) {
+    public ResponseEntity<List<ProjectResponseDTO>> getProjectsByResponsable(
+            @PathVariable UUID responsableId) {
         return ResponseEntity.ok(projectService.findByResponsable(responsableId));
     }
 
@@ -73,7 +74,8 @@ public class ProjectController {
      */
     @PostMapping
     @Operation(summary = "Create a new project")
-    public ResponseEntity<ProjectDTO> createProject(@Valid @RequestBody ProjectDTO projectDTO) {
+    public ResponseEntity<ProjectResponseDTO> createProject(
+            @Valid @RequestBody ProjectRequestDTO projectDTO) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(projectService.createProject(projectDTO));
     }
@@ -84,13 +86,13 @@ public class ProjectController {
      * @param id the UUID of the project to update
      * @param projectDTO the updated project data
      * @return the updated project
-     * @throws com.gestionprojet.exception.ResourceNotFoundException if project not found
+     * @throws com.gestionprojet.exception.ProjectNotFoundException if project not found
      */
     @PutMapping("/{id}")
     @Operation(summary = "Update an existing project")
-    public ResponseEntity<ProjectDTO> updateProject(
+    public ResponseEntity<ProjectResponseDTO> updateProject(
             @PathVariable UUID id,
-            @Valid @RequestBody ProjectDTO projectDTO) {
+            @Valid @RequestBody ProjectRequestDTO projectDTO) {
         return ResponseEntity.ok(projectService.updateProject(id, projectDTO));
     }
 
@@ -99,7 +101,7 @@ public class ProjectController {
      *
      * @param id the UUID of the project to delete
      * @return no content response
-     * @throws com.gestionprojet.exception.ResourceNotFoundException if project not found
+     * @throws com.gestionprojet.exception.ProjectNotFoundException if project not found
      */
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete a project")

@@ -35,7 +35,7 @@ public class KeycloakService {
     @Value("${keycloak.realm}")
     private String realm;
 
-    private static final String PASSWORD_TEMPORARY = false;
+    private static final Boolean PASSWORD_TEMPORARY = false;
 
     /**
      * Creates a new user in Keycloak with the given credentials.
@@ -173,7 +173,7 @@ public class KeycloakService {
      */
     public Set<String> getUserRoles(UUID keycloakId) {
         UserResource userResource = keycloak.realm(realm).users().get(keycloakId.toString());
-        return userResource.roles().realmLevel().getAll().stream()
+        return userResource.roles().realmLevel().listEffective().stream()
                 .map(RoleRepresentation::getName)
                 .collect(Collectors.toSet());
     }

@@ -2,28 +2,53 @@
 
 # Start the Gestion Projet application
 
-echo "=== Starting Gestion Projet Infrastructure ==="
+echo "=== Starting Gestion Projet Application ==="
 
-cd "$(dirname "$0")/infrastructure"
+# Kill any existing processes
+echo "Cleaning up existing processes..."
+fuser -k 8080/tcp 2>/dev/null
+fuser -k 4200/tcp 2>/dev/null
+sleep 2
 
-# Start databases
-echo "Starting PostgreSQL databases..."
-docker-compose up -d postgres keycloak-db
+# Start backend
+echo "Starting Backend (Spring Boot)..."
+cd "$(dirname "$0")/backend"
+mvn spring-boot:run > /tmp/backend.log 2>&1 &
+BACKEND_PID=$!
 
-echo "Waiting for databases to be ready..."
+# Wait for backend to start
+echo "Waiting for backend to start..."
 sleep 10
 
-# Check database status
-docker-compose ps
+# Start frontend
+echo "Starting Frontend (Angular)..."
+cd "$(dirname "$0")/frontend"
+npx ng serve --host 0.0.0.0 --port 4200 > /tmp/frontend.log 2>&1 &
+FRONTEND_PID=$!
+
+# Wait for frontend to start
+echo "Waiting for frontend to start..."
+sleep 20
+
+# Check status
+echo ""
+echo "=== Services Status ==="
+if kill -0 $BACKEND_PID 2>/dev/null; then
+    echo "✅ Backend: Running (PID: $BACKEND_PID)"
+else
+    echo "❌ Backend: Failed"
+fi
+
+if kill -0 $FRONTEND_PID 2>/dev/null; then
+    echo "✅ Frontend: Running (PID: $FRONTEND_PID)"
+else
+    echo "❌ Frontend: Failed"
+fi
 
 echo ""
-echo "=== Databases Started ==="
-echo "PostgreSQL (App): localhost:5432"
-echo "PostgreSQL (Keycloak): localhost:5433"
+echo "=== Access URLs ==="
+echo "Frontend: http://localhost:4200"
+echo "Backend API: http://localhost:8080/api"
+echo "Swagger UI: http://localhost:8080/api/swagger-ui.html"
 echo ""
-echo "Next steps:"
-echo "1. Start the backend: cd ../backend && mvn spring-boot:run"
-echo "2. Start the frontend: cd ../frontend && npm install && npm start"
-echo ""
-echo "Or use Docker Compose to start everything:"
-echo "  docker-compose up -d"
+echo "To stop: ./stop.sh"

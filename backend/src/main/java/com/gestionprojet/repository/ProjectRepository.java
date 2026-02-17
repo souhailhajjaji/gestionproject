@@ -30,7 +30,7 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
      * @param id the project UUID
      * @return Optional containing the project with responsable if found
      */
-    @Query("SELECT p FROM p JOIN FETCH p.responsable WHERE p.id = :id")
+    @Query("SELECT p FROM Project p JOIN FETCH p.responsable WHERE p.id = :id")
     Optional<Project> findByIdWithResponsable(@Param("id") UUID id);
 
     /**
