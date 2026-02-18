@@ -4,10 +4,14 @@ import com.gestionprojet.dto.UserDTO;
 import com.gestionprojet.exception.BusinessException;
 import com.gestionprojet.exception.ResourceNotFoundException;
 import com.gestionprojet.model.User;
+import com.gestionprojet.model.enums.Role;
 import com.gestionprojet.repository.UserRepository;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -206,5 +210,111 @@ public class KeycloakService {
 
         userRepository.save(user);
         log.info("Synced user from Keycloak: {}", keycloakId);
+    }
+
+    /**
+     * Creates a realm role in Keycloak if it doesn't exist.
+     *
+     * @param roleName the name of the role to create
+     * @param description the description of the role
+     * @return true if role was created, false if it already existed
+     */
+    public boolean createRealmRoleIfNotExists(String roleName, String description) {
+        RealmResource realmResource = keycloak.realm(realm);
+        RolesResource rolesResource = realmResource.roles();
+        
+        try {
+            rolesResource.get(roleName).toRepresentation();
+            log.debug("Role {} already exists in Keycloak", roleName);
+            return false;
+        } catch (Exception e) {
+            RoleRepresentation role = new RoleRepresentation();
+            role.setName(roleName);
+            role.setDescription(description);
+            role.setComposite(false);
+            role.setClientRole(false);
+            
+            rolesResource.create(role);
+            log.info("Created realm role {} in Keycloak", roleName);
+            return true;
+        }
+    }
+
+    /**
+     * Creates all required realm roles (ADMIN, USER) in Keycloak.
+     * This method ensures the roles exist before they can be assigned to users.
+     */
+    public void initializeRealmRoles() {
+        log.info("Initializing Keycloak realm roles...");
+        
+        createRealmRoleIfNotExists("ADMIN", "Administrator with full access to all features");
+        createRealmRoleIfNotExists("USER", "Standard user with limited access");
+        
+        log.info("Keycloak realm roles initialized successfully");
+    }
+
+    /**
+     * Creates an admin user in Keycloak and local database.
+     *
+     * @param email the admin email
+     * @param password the admin password
+     * @param prenom the admin first name
+     * @param nom the admin last name
+     * @return the created UserRepresentation
+     */
+    public UserRepresentation createAdminUser(String email, String password, String prenom, String nom) {
+        log.info("Creating admin user in Keycloak: {}", email);
+        
+        Optional<UserRepresentation> existingUser = getUserByEmail(email);
+        if (existingUser.isPresent()) {
+            log.info("Admin user {} already exists in Keycloak", email);
+            return existingUser.get();
+        }
+        
+        UserDTO adminDTO = new UserDTO();
+        adminDTO.setEmail(email);
+        adminDTO.setPrenom(prenom);
+        adminDTO.setNom(nom);
+        
+        UserRepresentation userRepresentation = createUserInKeycloak(adminDTO, password);
+        UUID keycloakId = UUID.fromString(userRepresentation.getId());
+        
+        assignRole(keycloakId, "ADMIN");
+        
+        Optional<User> localUser = userRepository.findByEmail(email);
+        if (localUser.isEmpty()) {
+            User user = new User();
+            user.setKeycloakId(keycloakId);
+            user.setEmail(email);
+            user.setPrenom(prenom);
+            user.setNom(nom);
+            user.setRoles(Set.of(Role.ADMIN));
+            userRepository.save(user);
+            log.info("Created admin user in local database: {}", email);
+        }
+        
+        log.info("Admin user {} created successfully with ADMIN role", email);
+        return userRepresentation;
+    }
+
+    /**
+     * Initializes Keycloak setup including roles and admin user.
+     * Called automatically after bean construction.
+     */
+    @PostConstruct
+    public void initializeKeycloakSetup() {
+        try {
+            log.info("Starting Keycloak initialization...");
+            
+            initializeRealmRoles();
+            
+            log.info("Keycloak initialization completed successfully");
+        } catch (jakarta.ws.rs.ForbiddenException e) {
+            log.warn("Keycloak initialization skipped: Insufficient permissions (403 Forbidden). ");
+            log.warn("Please ensure the backend-api client in Keycloak has 'manage-realm' or 'manage-users' service account roles.");
+            log.warn("The application will continue to work, but realm roles must be created manually in Keycloak.");
+        } catch (Exception e) {
+            log.error("Failed to initialize Keycloak: {}", e.getMessage(), e);
+        }
     }
 }

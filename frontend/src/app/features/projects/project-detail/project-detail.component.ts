@@ -86,13 +86,19 @@ import { User } from '../../../shared/models/user';
         </div>
       </div>
 
+      <!-- Error Alert -->
+      <div class="alert alert-danger alert-dismissible fade show mb-4" *ngIf="taskError" role="alert">
+        {{ taskError }}
+        <button type="button" class="btn-close" (click)="taskError = ''"></button>
+      </div>
+
       <!-- Create Task Modal -->
       <div class="modal" [class.show]="showCreateTask" style="display: block;" *ngIf="showCreateTask">
         <div class="modal-dialog">
           <div class="modal-content">
             <div class="modal-header">
               <h5 class="modal-title">Nouvelle tâche</h5>
-              <button type="button" class="btn-close" (click)="showCreateTask = false"></button>
+              <button type="button" class="btn-close" (click)="showCreateTask = false; taskError = ''"></button>
             </div>
             <div class="modal-body">
               <form (ngSubmit)="createTask()">
@@ -191,17 +197,25 @@ export class ProjectDetailComponent implements OnInit {
     });
   }
 
+  taskError = '';
+
   /**
    * Creates a new task for this project with the current form data.
    * Closes the modal and refreshes the task list on success.
    */
   createTask(): void {
+    this.taskError = '';
     this.newTask.projetId = this.id();
     this.apiService.createTask(this.newTask).subscribe({
       next: () => {
         this.showCreateTask = false;
         this.newTask = { statut: 'TODO', priorite: 'MOYENNE' };
+        this.taskError = '';
         this.loadTasks();
+      },
+      error: (err) => {
+        this.taskError = 'Erreur lors de la création de la tâche: ' + err.message;
+        console.error('Error creating task:', err);
       }
     });
   }

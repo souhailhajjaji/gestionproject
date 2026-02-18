@@ -10,6 +10,11 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
 
 /**
  * Security configuration class for the application.
@@ -24,11 +29,7 @@ public class SecurityConfig {
         "/v3/api-docs/**",
         "/swagger-ui/**",
         "/swagger-ui.html",
-        "/actuator/health",
-        "/actuator/info",
-        "/users/**",
-        "/projects/**",
-        "/tasks/**"
+        "/actuator/**"
     };
 
     /**
@@ -43,12 +44,20 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                // Public endpoints (Swagger, Actuator)
                 .requestMatchers(WHITE_LIST).permitAll()
-                .anyRequest().authenticated()
+                // Allow all requests without authentication for development
+                // In production, remove this line and enable authentication below
+                .requestMatchers("/**").permitAll()
+                // Uncomment below for production:
+                // .requestMatchers(org.springframework.http.HttpMethod.GET, "/users/**", "/projects/**", "/tasks/**").permitAll()
+                // .requestMatchers("/users/**", "/projects/**", "/tasks/**").authenticated()
+                // .anyRequest().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2
                 .jwt(jwt -> jwt
@@ -57,6 +66,20 @@ public class SecurityConfig {
             );
 
         return http.build();
+    }
+    
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:4200", "http://localhost:4201"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowCredentials(true);
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
+        
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 
     /**

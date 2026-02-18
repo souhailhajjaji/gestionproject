@@ -199,8 +199,8 @@ export class ApiService {
    * @param assigneId - The UUID of the assignee
    * @returns Observable of an array of tasks
    */
-  getTasksByAssigne(assgneId: string): Observable<Task[]> {
-    return this.http.get<Task[]>(`${this.apiUrl}/tasks/assigne/${assgneId}`).pipe(catchError(this.handleError));
+  getTasksByAssigne(assigneId: string): Observable<Task[]> {
+    return this.http.get<Task[]>(`${this.apiUrl}/tasks/assigne/${assigneId}`).pipe(catchError(this.handleError));
   }
 
   /**

@@ -39,12 +39,13 @@ export class KeycloakService {
    * Attempts silent SSO login and logs authentication status.
    * @returns Promise that resolves when initialization is complete
    */
-  async init(): Promise<void> {
+  async init(): Promise<boolean> {
     try {
       const authenticated = await this.keycloak.init({
         onLoad: 'check-sso',
         silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html',
-        pkceMethod: 'S256'
+        pkceMethod: 'S256',
+        checkLoginIframe: false
       });
 
       if (authenticated) {
@@ -52,8 +53,10 @@ export class KeycloakService {
       } else {
         console.log('User not authenticated');
       }
+      return authenticated;
     } catch (error) {
       console.error('Keycloak initialization failed', error);
+      return false;
     }
   }
 

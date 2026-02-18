@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../core/service/api.service';
 import { KeycloakService } from '../../../core/service/keycloak.service';
-import { User } from '../../../shared/models/user';
+import { User, Role } from '../../../shared/models/user';
 
 /**
  * Component for displaying and managing the list of users.
@@ -57,12 +57,20 @@ import { User } from '../../../shared/models/user';
                 </div>
                 <div class="mb-3">
                   <label class="form-label">Rôles</label>
-                  <select class="form-select" [(ngModel)]="newUser.roles" name="roles" multiple>
-                    <option [value]="'ADMIN'">ADMIN</option>
-                    <option [value]="'USER'">USER</option>
-                  </select>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="roleAdmin" 
+                           [checked]="selectedRoles.includes('ADMIN')"
+                           (change)="toggleRole('ADMIN', $event)">
+                    <label class="form-check-label" for="roleAdmin">ADMIN</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="roleUser" 
+                           [checked]="selectedRoles.includes('USER')"
+                           (change)="toggleRole('USER', $event)">
+                    <label class="form-check-label" for="roleUser">USER</label>
+                  </div>
                 </div>
-                <button type="submit" class="btn btn-primary">Créer</button>
+                <button type="submit" class="btn btn-primary" [disabled]="selectedRoles.length === 0">Créer</button>
               </form>
             </div>
           </div>
@@ -112,8 +120,9 @@ export class UserListComponent implements OnInit {
 
   users: User[] = [];
   showCreateForm = false;
-  newUser: Partial<User> = { roles: ['USER'] };
+  newUser: Partial<User> = {};
   password = '';
+  selectedRoles: Role[] = ['USER'];
 
   userError = '';
 
@@ -141,14 +150,36 @@ export class UserListComponent implements OnInit {
   }
 
   /**
+   * Toggles a role in the selected roles array.
+   * @param role - The role to toggle
+   * @param event - The checkbox change event
+   */
+  toggleRole(role: Role, event: Event): void {
+    const checkbox = event.target as HTMLInputElement;
+    if (checkbox.checked) {
+      if (!this.selectedRoles.includes(role)) {
+        this.selectedRoles.push(role);
+      }
+    } else {
+      this.selectedRoles = this.selectedRoles.filter(r => r !== role);
+    }
+  }
+
+  /**
    * Creates a new user with the current form data.
    * Closes the modal and refreshes the user list on success.
    */
   createUser(): void {
-    this.apiService.createUser(this.newUser, this.password).subscribe({
+    const userToCreate: Partial<User> = {
+      ...this.newUser,
+      roles: this.selectedRoles
+    };
+    
+    this.apiService.createUser(userToCreate, this.password).subscribe({
       next: () => {
         this.showCreateForm = false;
-        this.newUser = { roles: ['USER'] };
+        this.newUser = {};
+        this.selectedRoles = ['USER'];
         this.password = '';
         this.userError = '';
         this.loadUsers();
