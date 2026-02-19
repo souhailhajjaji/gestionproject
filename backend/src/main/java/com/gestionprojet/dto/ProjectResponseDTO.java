@@ -1,6 +1,7 @@
 package com.gestionprojet.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 
 import java.time.Instant;
@@ -15,6 +16,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ProjectResponseDTO {
 
     private UUID id;
@@ -33,9 +35,7 @@ public class ProjectResponseDTO {
 
     private UserBriefDTO responsable;
 
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
     private Instant createdAt;
 
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
     private Instant updatedAt;
 }

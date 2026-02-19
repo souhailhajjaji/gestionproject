@@ -39,10 +39,10 @@ public class Project {
     private User responsable;
 
     @CreationTimestamp
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "created_at", updatable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE")
     private Instant createdAt;
 
     @UpdateTimestamp
-    @Column(name = "updated_at")
+    @Column(name = "updated_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
     private Instant updatedAt;
 }
