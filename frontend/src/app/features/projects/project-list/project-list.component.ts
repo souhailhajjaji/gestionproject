@@ -18,7 +18,7 @@ import { User } from '../../../shared/models/user';
     <div class="container-fluid">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Gestion des projets</h2>
-        <button class="btn btn-primary" (click)="showCreateForm = true">
+        <button class="btn btn-primary" (click)="openCreateForm()">
           <i class="bi bi-plus"></i> Nouveau projet
         </button>
       </div>
@@ -158,6 +158,19 @@ export class ProjectListComponent implements OnInit {
   }
 
   /**
+   * Opens the create project form and initializes default dates.
+   */
+  openCreateForm(): void {
+    const today = new Date().toISOString().split('T')[0];
+    const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    this.newProject = {
+      dateDebut: today,
+      dateFin: nextWeek
+    };
+    this.showCreateForm = true;
+  }
+
+  /**
    * Creates a new project with the current form data.
    * Closes the modal and refreshes the project list on success.
    */
@@ -170,7 +183,7 @@ export class ProjectListComponent implements OnInit {
         this.loadProjects();
       },
       error: (err) => {
-        this.projectError = 'Erreur lors de la création: ' + err.message;
+        this.projectError = 'Erreur lors de la création: ' + (err.error?.message || err.message);
         console.error('Error creating project:', err);
       }
     });
