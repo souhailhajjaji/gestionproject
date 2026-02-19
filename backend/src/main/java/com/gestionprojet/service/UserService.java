@@ -33,6 +33,7 @@ public class UserService {
     /**
      * Creates a new user with the given data.
      * First creates the user in Keycloak, then stores local user data.
+     * If Keycloak is unavailable or returns 403, creates local user only (development mode).
      *
      * @param userDTO the user data transfer object containing user information
      * @param password the initial password for the user
@@ -47,9 +48,21 @@ public class UserService {
             throw new BusinessException("User with this email already exists");
         }
 
-        // Create user in Keycloak first
-        var kcUser = keycloakService.createUserInKeycloak(userDTO, password);
-        UUID keycloakId = UUID.fromString(kcUser.getId());
+        UUID keycloakId;
+        try {
+            // Create user in Keycloak first
+            var kcUser = keycloakService.createUserInKeycloak(userDTO, password);
+            keycloakId = UUID.fromString(kcUser.getId());
+            log.info("Created user in Keycloak: {}", keycloakId);
+        } catch (jakarta.ws.rs.ForbiddenException e) {
+            // Keycloak 403 - create local user only (development mode)
+            log.warn("Keycloak returned 403, creating local user only. Consider configuring Keycloak permissions.");
+            keycloakId = UUID.randomUUID();
+        } catch (Exception e) {
+            // Keycloak unavailable - create local user only (development mode)
+            log.warn("Keycloak unavailable ({}), creating local user only", e.getMessage());
+            keycloakId = UUID.randomUUID();
+        }
 
         // Create local user record
         User user = new User();

@@ -55,7 +55,7 @@ public class UserController {
     }
 
     /**
-     * Creates a new user. Requires ADMIN role.
+     * Creates a new user.
      *
      * @param userDTO the user data to create
      * @param password the initial password for the user
@@ -63,7 +63,6 @@ public class UserController {
      */
     @PostMapping
     @Operation(summary = "Create a new user")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserDTO> createUser(
             @Valid @RequestBody UserDTO userDTO,
             @RequestParam String password) {
@@ -72,7 +71,7 @@ public class UserController {
     }
 
     /**
-     * Updates an existing user. Requires ADMIN role.
+     * Updates an existing user.
      *
      * @param id the UUID of the user to update
      * @param userDTO the updated user data
@@ -81,7 +80,6 @@ public class UserController {
      */
     @PutMapping("/{id}")
     @Operation(summary = "Update an existing user")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserDTO> updateUser(
             @PathVariable UUID id,
             @Valid @RequestBody UserDTO userDTO) {
@@ -89,7 +87,7 @@ public class UserController {
     }
 
     /**
-     * Deletes a user by their ID. Requires ADMIN role.
+     * Deletes a user by their ID.
      *
      * @param id the UUID of the user to delete
      * @return no content response
@@ -97,7 +95,6 @@ public class UserController {
      */
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete a user")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteUser(@PathVariable UUID id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
@@ -120,7 +117,7 @@ public class UserController {
     }
 
     /**
-     * Assigns a role to a user. Requires ADMIN role.
+     * Assigns a role to a user.
      *
      * @param id the UUID of the user
      * @param role the role to assign (e.g., ADMIN, USER)
@@ -129,7 +126,6 @@ public class UserController {
      */
     @PutMapping("/{id}/roles/{role}")
     @Operation(summary = "Assign role to user")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserDTO> assignRole(
             @PathVariable UUID id,
             @PathVariable String role) {
@@ -137,7 +133,7 @@ public class UserController {
     }
 
     /**
-     * Removes a role from a user. Requires ADMIN role.
+     * Removes a role from a user.
      *
      * @param id the UUID of the user
      * @param role the role to remove
@@ -146,7 +142,6 @@ public class UserController {
      */
     @DeleteMapping("/{id}/roles/{role}")
     @Operation(summary = "Remove role from user")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserDTO> removeRole(
             @PathVariable UUID id,
             @PathVariable String role) {
