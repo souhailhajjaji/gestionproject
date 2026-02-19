@@ -18,9 +18,13 @@ mvn package -DskipTests
 mvn spring-boot:run
 
 # Test
-mvn test                                      # All tests
-mvn test -Dtest=UserServiceTest              # Single class
-mvn test -Dtest=UserServiceTest#createUser   # Single method
+mvn test                          # All tests
+mvn test -Dtest=UserServiceTest   # Single class
+mvn test -Dtest=UserServiceTest#createUser  # Single method
+
+# Lint & Format
+mvn checkstyle:check              # Check style violations
+mvn spotless:apply                # Auto-format code
 
 # Coverage (enforced >80%)
 mvn verify
@@ -32,177 +36,122 @@ cd frontend
 
 # Install & Run
 npm install
-npm start              # ng serve --host 0.0.0.0
-npm run dev            # Port 4200
+npm start              # ng serve --host 0.0.0.0 (port 4200)
 
 # Test
-npm test               # All tests
+npm test                              # All tests
 npm test -- --include='**/user.service.spec.ts'  # Single file
-npm run test -- --browsers=ChromeHeadless --watch=false --code-coverage
+npm test -- --browsers=ChromeHeadless --watch=false --code-coverage
 
-# Lint
+# Lint & Build
 npm run lint
 npm run build
 ```
 
 ---
 
-## Backend Code Style (Java)
+## Backend Code Style (Java 21 / Spring Boot 3.4)
 
 ### Project Structure
 ```
 backend/src/main/java/com/gestionprojet/
-├── config/           # Security, CORS, OpenAPI configs
+├── config/           # Security, CORS, OpenAPI
 ├── controller/       # REST controllers
-├── dto/             # Data Transfer Objects
-├── exception/       # Custom exceptions & handlers
-├── model/           # JPA entities
-│   └── enums/       # Enumerations
-├── repository/      # Spring Data repositories
-└── service/         # Business logic
+├── dto/              # Data Transfer Objects
+├── exception/        # Custom exceptions & handlers
+├── model/            # JPA entities + enums
+├── repository/       # Spring Data repositories
+└── service/          # Business logic
 ```
 
 ### Naming Conventions
 - **Classes**: PascalCase (`UserService`, `ProjectController`)
-- **Methods**: camelCase (`getUserById()`, `createProject()`)
-- **Variables**: camelCase (`userRepository`, `projectId`)
-- **Constants**: UPPER_SNAKE_CASE (`WHITE_LIST`, `DEFAULT_PAGE_SIZE`)
-- **Packages**: lowercase reverse domain (`com.gestionprojet.service`)
+- **Methods/Variables**: camelCase (`getUserById()`, `userRepository`)
+- **Constants**: UPPER_SNAKE_CASE (`DEFAULT_PAGE_SIZE`)
+- **Packages**: lowercase reverse domain
 
 ### Annotations Order
 ```java
-@RestController
-@RequestMapping("/users")
-@RequiredArgsConstructor
-@Tag(name = "Users")
-@SecurityRequirement(name = "bearerAuth")
+@RestController @RequestMapping("/api/users") @RequiredArgsConstructor
+@Tag(name = "Users") @SecurityRequirement(name = "bearerAuth")
 public class UserController { }
 ```
 
 ### Dependency Injection
-Use Lombok `@RequiredArgsConstructor` with `private final` fields:
+Use Lombok `@RequiredArgsConstructor` with `private final`:
 ```java
-@Service
-@RequiredArgsConstructor
-@Slf4j
+@Service @RequiredArgsConstructor @Slf4j
 public class UserService {
     private final UserRepository userRepository;
     private final KeycloakService keycloakService;
 }
 ```
 
-### Imports Organization
+### Imports Order
 1. Java standard libraries
-2. Third-party libraries (Spring, Lombok, etc.)
+2. Third-party (Spring, Lombok)
 3. Project internal imports
-
-Use wildcard imports only for static imports.
-
-### Key Technologies
-- **Java 21** with **Spring Boot 3.4.2**
-- **Lombok** (`@Getter`, `@Setter`, `@Builder`, `@RequiredArgsConstructor`, `@Slf4j`)
-- **JPA/Hibernate** with PostgreSQL
-- **Flyway** for database migrations
-- **Keycloak** for authentication (OAuth2/JWT)
-- **TestContainers** for integration tests
-- **JaCoCo** for coverage (>80% required)
+4. Static imports (use wildcards)
 
 ### Error Handling
 - Use `@ControllerAdvice` with `@ExceptionHandler`
 - Custom exceptions extend `RuntimeException`
-- Return meaningful error messages in French
+- Error messages in French
 
-### Documentation
-- All public classes and methods MUST have Javadoc
-- Use `@param`, `@return`, `@throws` tags
+### Key Technologies
+- Java 21, Spring Boot 3.4.2, Lombok, JPA/Hibernate + PostgreSQL
+- Flyway migrations, Keycloak (OAuth2/JWT), TestContainers, JaCoCo (>80%)
 
 ---
 
-## Frontend Code Style (Angular/TypeScript)
+## Frontend Code Style (Angular 21 / TypeScript)
 
 ### Project Structure
 ```
 frontend/src/app/
-├── core/                    # Singleton services, guards, interceptors
-│   ├── guard/
-│   ├── interceptor/
-│   └── service/
-├── features/                # Feature modules
-│   ├── users/
-│   ├── projects/
-│   └── tasks/
-└── shared/                  # Shared components, models, utilities
-    ├── models/
-    └── components/
+├── core/           # Singleton services, guards, interceptors
+├── features/       # Feature modules (users, projects, tasks)
+└── shared/         # Shared components, models, utilities
 ```
 
 ### Naming Conventions
-- **Components**: `feature-name.component.ts` (kebab-case)
+- **Components**: kebab-case (`user-list.component.ts`)
 - **Services**: `feature.service.ts`
-- **Models**: PascalCase (`User`, `Project`, `TaskStatus`)
-- **Selectors**: prefix with `app-` (e.g., `app-user-list`)
+- **Models**: PascalCase (`User`, `Project`)
+- **Selectors**: prefix with `app-`
 
-### Angular Patterns
-- Use **standalone components** (no NgModules)
-- Use `inject()` for dependency injection
-- Prefer inline templates for simple components
-- Use RxJS operators: `map`, `catchError`, `switchMap`
-
-### Component Example
-```typescript
-@Component({
-  selector: 'app-user-list',
-  standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
-  template: `...`,
-  styles: []
-})
-export class UserListComponent implements OnInit {
-  private apiService = inject(ApiService);
-  keycloakService = inject(KeycloakService);
-}
-```
+### TypeScript & Angular
+- Explicit types, avoid `any`, interfaces for objects, `readonly` for immutable
+- Standalone components, use `inject()` for DI, RxJS: `map`, `catchError`, `switchMap`
 
 ### Error Handling
-- Centralize in `ApiService.handleError()`
-- Display user-friendly messages in French
+- Backend: `@ControllerAdvice`, custom `RuntimeException`, French messages
+- Frontend: Centralize in `ApiService.handleError()`, French user messages
 
 ### Styling
-- Use **SCSS** (configured in angular.json)
-- Bootstrap 5 for UI components
+- SCSS, Bootstrap 5
 
 ---
 
 ## General Guidelines
 
-### Git Workflow
-- Main branch: `main`
-- Feature branches: `feature/description`
-- Commit messages in present tense: "Add user authentication"
+### Git
+- Main: `main`, Features: `feature/description`
+- Commit messages: present tense ("Add user authentication")
 
 ### Security
-- Never commit secrets or credentials
-- Use environment variables for configuration
-- Validate all user inputs
-- Use Keycloak for authentication/authorization
+- Never commit secrets
+- Use environment variables
+- Validate all inputs
+- Keycloak for authz
 
 ### API Design
-- RESTful endpoints under `/api`
-- Use proper HTTP methods (GET, POST, PUT, PATCH, DELETE)
-- Swagger UI available at `/api/swagger-ui.html`
+- RESTful under `/api`
+- Proper HTTP methods
+- Swagger: `/api/swagger-ui.html`
 
----
-
-## Environment Setup
-
-### Required
-- Java 21
-- Maven 3.9+
-- Node.js 22
-- Docker & Docker Compose
-
-### Local Development URLs
+### Environment
+- Java 21, Maven 3.9+, Node.js 22, Docker
 - Frontend: http://localhost:4200
-- Backend API: http://localhost:8082/api
-- Swagger UI: http://localhost:8082/api/swagger-ui.html
+- Backend: http://localhost:8082/api
 - Keycloak: http://localhost:8080
