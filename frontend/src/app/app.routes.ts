@@ -4,13 +4,17 @@ import { authGuard } from './core/guard/auth.guard';
 /**
  * Application route configuration.
  * Defines all navigation paths and their associated components.
- * All routes are protected by the authGuard.
+ * Protected routes require authentication via authGuard.
  */
 export const routes: Routes = [
   {
     path: '',
     redirectTo: 'dashboard',
     pathMatch: 'full'
+  },
+  {
+    path: 'login',
+    loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent)
   },
   {
     path: 'dashboard',

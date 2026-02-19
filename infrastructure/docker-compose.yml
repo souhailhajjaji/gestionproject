@@ -21,7 +21,7 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:26.0
     container_name: gestionprojet-keycloak
-    command: start-dev --import-realm
+    command: start-dev --import-realm --spi-import-realm-strategy=OVERWRITE_EXISTING
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin123

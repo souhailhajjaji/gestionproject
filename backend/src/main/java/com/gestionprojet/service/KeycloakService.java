@@ -39,6 +39,9 @@ public class KeycloakService {
     @Value("${keycloak.realm}")
     private String realm;
 
+    @Value("${keycloak.auth-server-url}")
+    private String authServerUrl;
+
     private static final Boolean PASSWORD_TEMPORARY = false;
 
     /**
@@ -300,11 +303,15 @@ public class KeycloakService {
     /**
      * Initializes Keycloak setup including roles and admin user.
      * Called automatically after bean construction.
+     * Wrapped in try-catch to prevent startup failure if Keycloak is unavailable.
      */
     @PostConstruct
     public void initializeKeycloakSetup() {
         try {
             log.info("Starting Keycloak initialization...");
+            
+            // Test if Keycloak is reachable before attempting initialization
+            keycloak.serverInfo().getInfo();
             
             initializeRealmRoles();
             
@@ -313,6 +320,10 @@ public class KeycloakService {
             log.warn("Keycloak initialization skipped: Insufficient permissions (403 Forbidden). ");
             log.warn("Please ensure the backend-api client in Keycloak has 'manage-realm' or 'manage-users' service account roles.");
             log.warn("The application will continue to work, but realm roles must be created manually in Keycloak.");
+        } catch (jakarta.ws.rs.ProcessingException e) {
+            log.warn("Keycloak initialization skipped: Cannot connect to Keycloak server at {}.", authServerUrl);
+            log.warn("Please ensure Keycloak is running and accessible.");
+            log.warn("The application will start without Keycloak integration. User management features will be unavailable.");
         } catch (Exception e) {
             log.error("Failed to initialize Keycloak: {}", e.getMessage(), e);
         }

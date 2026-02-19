@@ -5,6 +5,7 @@ import org.keycloak.admin.client.KeycloakBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 
 /**
  * Configuration class for Keycloak Admin Client.
@@ -28,10 +29,12 @@ public class KeycloakConfig {
     /**
      * Creates a Keycloak admin client instance using client credentials flow.
      * This instance is used to manage users and roles in Keycloak.
+     * Marked as @Lazy to prevent startup failure if Keycloak is not available.
      *
      * @return configured Keycloak instance
      */
     @Bean
+    @Lazy
     public Keycloak keycloak() {
         return KeycloakBuilder.builder()
                 .serverUrl(authServerUrl)

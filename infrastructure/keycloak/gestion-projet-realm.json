@@ -66,7 +66,14 @@
             "jsonType.label": "String"
           }
         }
-      ]
+      ],
+      "authorizationSettings": {
+        "allowRemoteResourceManagement": true,
+        "policyEnforcementMode": "ENFORCING",
+        "resources": [],
+        "policies": [],
+        "scopes": []
+      }
     },
     {
       "clientId": "frontend-app",
@@ -84,10 +91,21 @@
       "fullScopeAllowed": true,
       "redirectUris": [
         "http://localhost:4200/*",
-        "http://localhost:4200"
+        "http://localhost:4200",
+        "http://localhost:4201/*",
+        "http://localhost:4201",
+        "http://127.0.0.1:4200/*",
+        "http://127.0.0.1:4200",
+        "http://localhost:*/silent-check-sso.html",
+        "http://localhost:*/*",
+        "http://127.0.0.1:*/silent-check-sso.html",
+        "http://127.0.0.1:*/*"
       ],
       "webOrigins": [
-        "http://localhost:4200"
+        "http://localhost:4200",
+        "http://localhost:4201",
+        "http://127.0.0.1:4200",
+        "+"
       ],
       "defaultClientScopes": [
         "role_list",

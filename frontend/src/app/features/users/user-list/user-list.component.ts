@@ -8,7 +8,7 @@ import { User, Role } from '../../../shared/models/user';
 
 /**
  * Component for displaying and managing the list of users.
- * Allows creating, viewing, and deleting users.
+ * Allows creating, viewing, and deleting users (ADMIN only for creation/deletion).
  */
 @Component({
   selector: 'app-user-list',
@@ -18,15 +18,31 @@ import { User, Role } from '../../../shared/models/user';
     <div class="container-fluid">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Gestion des utilisateurs</h2>
-        <button class="btn btn-primary" (click)="showCreateForm = true">
+        <button class="btn btn-primary" (click)="openCreateForm()" *ngIf="isAdmin">
           <i class="bi bi-plus"></i> Nouvel utilisateur
         </button>
+      </div>
+
+      <!-- Authentication Warning -->
+      <div class="alert alert-warning" *ngIf="!isLoggedIn">
+        <strong>Non connecté:</strong> Veuillez vous <a href="javascript:void(0)" (click)="login()">connecter</a> pour accéder à toutes les fonctionnalités.
+      </div>
+
+      <!-- Admin Notice -->
+      <div class="alert alert-info" *ngIf="isLoggedIn && !isAdmin">
+        <strong>Information:</strong> Seuls les administrateurs peuvent créer ou supprimer des utilisateurs.
       </div>
 
       <!-- Error Alert -->
       <div class="alert alert-danger alert-dismissible fade show" *ngIf="userError" role="alert">
         {{ userError }}
         <button type="button" class="btn-close" (click)="userError = ''"></button>
+      </div>
+
+      <!-- Admin Only Alert -->
+      <div class="alert alert-warning" *ngIf="showAdminRequiredAlert">
+        <strong>Accès refusé:</strong> Cette action nécessite le rôle ADMIN. Veuillez contacter votre administrateur.
+        <button type="button" class="btn-close" (click)="showAdminRequiredAlert = false"></button>
       </div>
 
       <!-- Create User Modal -->
@@ -101,7 +117,7 @@ import { User, Role } from '../../../shared/models/user';
                 </td>
                 <td>
                   <a [routerLink]="['/users', user.id]" class="btn btn-sm btn-outline-primary">Voir</a>
-                  <button class="btn btn-sm btn-outline-danger ms-1" (click)="deleteUser(user.id)">
+                  <button class="btn btn-sm btn-outline-danger ms-1" (click)="deleteUser(user.id)" *ngIf="isAdmin">
                     Supprimer
                   </button>
                 </td>
@@ -125,12 +141,45 @@ export class UserListComponent implements OnInit {
   selectedRoles: Role[] = ['USER'];
 
   userError = '';
+  showAdminRequiredAlert = false;
+
+  /**
+   * Gets whether the current user is logged in.
+   */
+  get isLoggedIn(): boolean {
+    return this.keycloakService.isLoggedIn();
+  }
+
+  /**
+   * Gets whether the current user has ADMIN role.
+   */
+  get isAdmin(): boolean {
+    return this.keycloakService.isAdmin();
+  }
 
   /**
    * Initializes the component and loads users.
    */
   ngOnInit(): void {
     this.loadUsers();
+  }
+
+  /**
+   * Redirects to Keycloak login page.
+   */
+  login(): void {
+    this.keycloakService.login();
+  }
+
+  /**
+   * Opens the create user form if user is admin, otherwise shows warning.
+   */
+  openCreateForm(): void {
+    if (this.isAdmin) {
+      this.showCreateForm = true;
+    } else {
+      this.showAdminRequiredAlert = true;
+    }
   }
 
   /**

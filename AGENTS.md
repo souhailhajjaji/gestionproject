@@ -1,6 +1,6 @@
 # AGENTS.md - Coding Guidelines for Gestion Projet
 
-Project Management System with Spring Boot 4 (Java 25) + Angular 21 + PostgreSQL + Keycloak
+Project Management System with Spring Boot 3.4 + Angular 21 + PostgreSQL + Keycloak
 
 ---
 
@@ -17,48 +17,32 @@ mvn package -DskipTests
 # Run
 mvn spring-boot:run
 
-# Test (all)
-mvn test
+# Test
+mvn test                                      # All tests
+mvn test -Dtest=UserServiceTest              # Single class
+mvn test -Dtest=UserServiceTest#createUser   # Single method
 
-# Test (single class)
-mvn test -Dtest=UserServiceTest
-
-# Test (single method)
-mvn test -Dtest=UserServiceTest#shouldCreateUser
-
-# Coverage (>80% required)
-mvn verify  # Runs tests with JaCoCo coverage check
-
-# Lint / Quality
-mvn checkstyle:check  # If configured
+# Coverage (enforced >80%)
+mvn verify
 ```
 
 ### Frontend (Angular CLI)
 ```bash
 cd frontend
 
-# Install dependencies
+# Install & Run
 npm install
+npm start              # ng serve --host 0.0.0.0
+npm run dev            # Port 4200
 
-# Development server
-npm start           # ng serve --host 0.0.0.0
-npm run dev         # Same with port 4200
-
-# Build
-npm run build
-npm run build -- --configuration production
-
-# Test (all)
-npm test
-
-# Test (single file)
-npm test -- --include='**/user.service.spec.ts'
-
-# Test (headless for CI)
+# Test
+npm test               # All tests
+npm test -- --include='**/user.service.spec.ts'  # Single file
 npm run test -- --browsers=ChromeHeadless --watch=false --code-coverage
 
 # Lint
 npm run lint
+npm run build
 ```
 
 ---
@@ -73,7 +57,7 @@ backend/src/main/java/com/gestionprojet/
 ├── dto/             # Data Transfer Objects
 ├── exception/       # Custom exceptions & handlers
 ├── model/           # JPA entities
-│   └── enums/      # Enumerations
+│   └── enums/       # Enumerations
 ├── repository/      # Spring Data repositories
 └── service/         # Business logic
 ```
@@ -83,18 +67,28 @@ backend/src/main/java/com/gestionprojet/
 - **Methods**: camelCase (`getUserById()`, `createProject()`)
 - **Variables**: camelCase (`userRepository`, `projectId`)
 - **Constants**: UPPER_SNAKE_CASE (`WHITE_LIST`, `DEFAULT_PAGE_SIZE`)
-- **Packages**: lowercase, reverse domain (`com.gestionprojet.service`)
+- **Packages**: lowercase reverse domain (`com.gestionprojet.service`)
 
 ### Annotations Order
 ```java
-@Entity
-@Table(name = "users")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class User { }
+@RestController
+@RequestMapping("/users")
+@RequiredArgsConstructor
+@Tag(name = "Users")
+@SecurityRequirement(name = "bearerAuth")
+public class UserController { }
+```
+
+### Dependency Injection
+Use Lombok `@RequiredArgsConstructor` with `private final` fields:
+```java
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class UserService {
+    private final UserRepository userRepository;
+    private final KeycloakService keycloakService;
+}
 ```
 
 ### Imports Organization
@@ -102,16 +96,16 @@ public class User { }
 2. Third-party libraries (Spring, Lombok, etc.)
 3. Project internal imports
 
-Use **wildcard imports** only for static imports.
+Use wildcard imports only for static imports.
 
 ### Key Technologies
-- **Java 25** with **Spring Boot 4.0.0**
-- **Lombok** for boilerplate reduction
-- **MapStruct** for DTO mapping
+- **Java 21** with **Spring Boot 3.4.2**
+- **Lombok** (`@Getter`, `@Setter`, `@Builder`, `@RequiredArgsConstructor`, `@Slf4j`)
 - **JPA/Hibernate** with PostgreSQL
 - **Flyway** for database migrations
 - **Keycloak** for authentication (OAuth2/JWT)
 - **TestContainers** for integration tests
+- **JaCoCo** for coverage (>80% required)
 
 ### Error Handling
 - Use `@ControllerAdvice` with `@ExceptionHandler`
@@ -121,7 +115,6 @@ Use **wildcard imports** only for static imports.
 ### Documentation
 - All public classes and methods MUST have Javadoc
 - Use `@param`, `@return`, `@throws` tags
-- Document business logic purpose, not implementation details
 
 ---
 
@@ -147,49 +140,36 @@ frontend/src/app/
 - **Components**: `feature-name.component.ts` (kebab-case)
 - **Services**: `feature.service.ts`
 - **Models**: PascalCase (`User`, `Project`, `TaskStatus`)
-- **Variables**: camelCase
 - **Selectors**: prefix with `app-` (e.g., `app-user-list`)
-
-### TypeScript Strictness
-```json
-{
-  "strict": true,
-  "noImplicitOverride": true,
-  "noImplicitReturns": true,
-  "noFallthroughCasesInSwitch": true
-}
-```
 
 ### Angular Patterns
 - Use **standalone components** (no NgModules)
 - Use `inject()` for dependency injection
-- Prefer `Observable` with async pipe over subscriptions
+- Prefer inline templates for simple components
 - Use RxJS operators: `map`, `catchError`, `switchMap`
 
-### Imports Organization
+### Component Example
 ```typescript
-// 1. Angular imports
-import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-
-// 2. Third-party imports
-import { Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
-
-// 3. Internal imports (ordered by path depth)
-import { User } from '../../shared/models/user';
-import { ApiService } from '../service/api.service';
+@Component({
+  selector: 'app-user-list',
+  standalone: true,
+  imports: [CommonModule, RouterLink, FormsModule],
+  template: `...`,
+  styles: []
+})
+export class UserListComponent implements OnInit {
+  private apiService = inject(ApiService);
+  keycloakService = inject(KeycloakService);
+}
 ```
 
 ### Error Handling
 - Centralize in `ApiService.handleError()`
-- Use `catchError` operator in service methods
 - Display user-friendly messages in French
 
 ### Styling
 - Use **SCSS** (configured in angular.json)
 - Bootstrap 5 for UI components
-- Component-specific styles in `.component.scss`
 
 ---
 
@@ -197,13 +177,8 @@ import { ApiService } from '../service/api.service';
 
 ### Git Workflow
 - Main branch: `main`
-- Create feature branches: `feature/description`
+- Feature branches: `feature/description`
 - Commit messages in present tense: "Add user authentication"
-
-### Testing Requirements
-- Backend: >80% code coverage (enforced by JaCoCo)
-- Frontend: Code coverage reporting with Karma
-- Run tests before committing
 
 ### Security
 - Never commit secrets or credentials
@@ -214,7 +189,6 @@ import { ApiService } from '../service/api.service';
 ### API Design
 - RESTful endpoints under `/api`
 - Use proper HTTP methods (GET, POST, PUT, PATCH, DELETE)
-- Return appropriate HTTP status codes
 - Swagger UI available at `/api/swagger-ui.html`
 
 ---
@@ -222,7 +196,7 @@ import { ApiService } from '../service/api.service';
 ## Environment Setup
 
 ### Required
-- Java 25
+- Java 21
 - Maven 3.9+
 - Node.js 22
 - Docker & Docker Compose
