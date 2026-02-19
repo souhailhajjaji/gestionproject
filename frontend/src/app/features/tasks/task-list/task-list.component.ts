@@ -47,8 +47,9 @@ import { User } from '../../../shared/models/user';
                 <option *ngFor="let user of users" [value]="user.id">{{ user.nom }} {{ user.prenom }}</option>
               </select>
             </div>
-            <div class="col-md-3 d-flex align-items-end">
-              <button class="btn btn-primary w-100" (click)="applyFilters()">Filtrer</button>
+            <div class="col-md-3 d-flex align-items-end gap-2">
+              <button class="btn btn-primary flex-fill" (click)="applyFilters()">Filtrer</button>
+              <button class="btn btn-outline-secondary" (click)="resetFilters()">Reset</button>
             </div>
           </div>
         </div>
@@ -159,15 +160,39 @@ export class TaskListComponent implements OnInit {
 
   /**
    * Applies the selected filters to the task list.
-   * Updates filteredTasks based on project, status, and assignee.
+   * Calls the backend API with filter parameters.
    */
   applyFilters(): void {
-    this.filteredTasks = this.tasks.filter(task => {
-      if (this.filterProjetId && task.projetId !== this.filterProjetId) return false;
-      if (this.filterStatut && task.statut !== this.filterStatut) return false;
-      if (this.filterAssigneId && task.assigneId !== this.filterAssigneId) return false;
-      return true;
+    const params: any = {};
+    if (this.filterProjetId) {
+      params.projetId = this.filterProjetId;
+    }
+    if (this.filterStatut) {
+      params.statut = this.filterStatut;
+    }
+    if (this.filterAssigneId) {
+      params.assigneId = this.filterAssigneId;
+    }
+
+    this.apiService.filterTasks(params).subscribe({
+      next: (tasks) => {
+        this.filteredTasks = tasks;
+      },
+      error: (err) => {
+        console.error('Error filtering tasks:', err);
+        this.filteredTasks = this.tasks;
+      }
     });
+  }
+
+  /**
+   * Resets all filters to show all tasks.
+   */
+  resetFilters(): void {
+    this.filterProjetId = '';
+    this.filterStatut = '';
+    this.filterAssigneId = '';
+    this.loadTasks();
   }
 
   /**
